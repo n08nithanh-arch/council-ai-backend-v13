@@ -395,19 +395,19 @@ Format:
 - Thư ký: Thư Ký Hội Đồng
 - Có mặt: {', '.join(active_names)}
 Chỉ ghi đúng danh sách có mặt, không thêm gì khác, 50-80 từ."""
-        rollcall = await asyncio.to_thread(call_llm_real, thuky["provider_info"] if thuky else get_provider_info("mistral"), thuky["system"] if thuky else "Ban la Thu Ky - chi ghi co mat, khong bia vang mat", rollcall_prompt, 300, 0.5) if thuky else f"Có mặt: {', '.join(active_names)}"
+        rollcall = await asyncio.to_thread(call_llm_real, thuky["provider_info"] if thuky else get_provider_info("mistral"), thuky["system"] if thuky else "Ban la Thu Ky - chi ghi co mat, khong bia vang mat", rollcall_prompt, 600, 0.5) if thuky else f"Có mặt: {', '.join(active_names)}"
         experts=[]
         for rid,info in data["roles"].items():
             if info.get("core_type") in ["thuky","phoql","nhansu"]: continue
             if rid not in data["active_roles"]: continue
             try:
-                ans=await asyncio.to_thread(call_llm_real, info["provider_info"], info["system"], f"Vấn đề: '{data['problem']}' - Bạn là {info['short_name']} ({info['role']}). Đưa ý kiến đầy đủ chi tiết 250-400 từ.", 600, 0.8)
+                ans=await asyncio.to_thread(call_llm_real, info["provider_info"], info["system"], f"Vấn đề: '{data['problem']}' - Bạn là {info['short_name']} ({info['role']}). Đưa ý kiến đầy đủ chi tiết, KHÔNG cụt câu, 400-600 từ, kết thúc trọn vẹn bằng dấu chấm. Nếu là phim hay hôm nay thì gợi ý 3-5 phim cụ thể.", 1500, 0.85)
                 experts.append({"personnel_id":rid,"name":info["short_name"],"role":info["role"],"content":ans,"provider":info["provider_info"]["provider"]})
             except Exception as ex:
                 experts.append({"personnel_id":rid,"name":info["short_name"],"role":info["role"],"content":f"[Lỗi {ex}]","provider":info["provider_info"]["provider"]})
         phoql=next((v for k,v in data["roles"].items() if v.get("core_type")=="phoql"), None)
-        summary_prompt = f"Vấn đề: '{data['problem']}'\nCác ý kiến chuyên gia:\n" + "\n".join([f"- {e['name']} ({e['role']}): {e['content'][:400]}" for e in experts]) + "\nTổng hợp ra quyết định cuối cùng 3 bước hành động có deadline."
-        summary = await asyncio.to_thread(call_llm_real, phoql["provider_info"] if phoql else get_provider_info("mistral"), phoql["system"] if phoql else "Ban la Pho Quan Ly", summary_prompt, 700, 0.7)
+        summary_prompt = f"Vấn đề: '{data['problem']}'\nCác ý kiến chuyên gia (đầy đủ, không cắt):\n" + "\n".join([f"- {e['name']} ({e['role']}): {e['content']}" for e in experts]) + "\nTổng hợp ra quyết định cuối cùng 3 bước hành động có deadline, không cụt câu."
+        summary = await asyncio.to_thread(call_llm_real, phoql["provider_info"] if phoql else get_provider_info("mistral"), phoql["system"] if phoql else "Ban la Pho Quan Ly - tong hop day du, khong cut cau", summary_prompt, 1500, 0.7)
         minutes_content = f"# Biên bản họp - {data['problem']}\n\n## Điểm danh\n{rollcall}\n\n## Ý kiến chuyên gia\n" + "\n\n".join([f"### {e['name']} - {e['role']} [{e['provider']}]\n{e['content']}" for e in experts]) + f"\n\n## Tổng hợp - Phó Quản Lý Điều Hành\n{summary}\n"
         base_txt, base_name = make_bien_ban_filename(data['problem'], "txt")
         # V13 CLEAN: KHÔNG ghi ra disk data/meetings/ để tránh 9.89GB, chỉ trả về local memory
@@ -445,11 +445,11 @@ async def continue_chat(cid: str, msg: ChatMessage):
             results = {}
             for rid in mentioned_ids[:6]:
                 info = data["roles"][rid]
-                ans = await asyncio.to_thread(call_llm_real, info["provider_info"], info["system"], f"Chủ sự hỏi riêng: '{clean}' - Vấn đề gốc: '{data['problem']}'", 300, 0.85)
+                ans = await asyncio.to_thread(call_llm_real, info["provider_info"], info["system"], f"Chủ sự hỏi riêng: '{clean}' - Vấn đề gốc: '{data['problem']}' - Trả lời đầy đủ không cụt câu 300-500 từ.", 1200, 0.85)
                 results[rid] = {"type":"text","text":ans,"name":info["short_name"],"short_name":info["short_name"],"color":info["color"],"provider":info["provider_info"]["provider"]}
             return {"action":"mention","results":results}
         summary_role=next((v for v in data["roles"].values() if v.get("core_type")=="phoql"), None) or next(iter(data["roles"].values()))
-        ans=await asyncio.to_thread(call_llm_real, summary_role["provider_info"], summary_role["system"], f"Chủ sự hỏi: '{clean}' - Vấn đề gốc: '{data['problem']}'", 300, 0.8)
+        ans=await asyncio.to_thread(call_llm_real, summary_role["provider_info"], summary_role["system"], f"Chủ sự hỏi: '{clean}' - Vấn đề gốc: '{data['problem']}' - Trả lời đầy đủ không cụt câu 300-500 từ.", 1200, 0.8)
         return {"action":"general","type":"text","name":summary_role["short_name"],"short_name":summary_role["short_name"],"color":summary_role["color"],"text":ans}
     except Exception as e:
         traceback.print_exc()
