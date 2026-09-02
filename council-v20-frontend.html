@@ -238,7 +238,15 @@ async function createAndRun(){
     lastBaseName = rdata.base_name || '';
     lastMinutesFiles = rdata.minutes_files || [];
     document.getElementById('minutesContent').textContent = lastMinutes;
-    document.getElementById('chatList').innerHTML = `<div class="bg-[#FFFBF3] rounded-[12px] p-2 text-[11px]">📋 Điểm danh: ${rdata.rollcall||''}</div>` + (rdata.experts||[]).map(e=>`<div class="bg-white rounded-[12px] p-2 border"><div class="font-semibold text-[11px]">${e.name} - ${e.role} [${e.provider} - ${e.provider==='mistral'?'mạnh lý luận':e.provider==='groq'?'mạnh kỹ thuật':'mạnh sáng tạo'}]</div><div class="text-[12px] mt-1">${e.content||''}</div></div>`).join('');
+    // FIX: hien thi theo doan chat, tung bubble
+    let chatHtml = `<div class="bg-[#FFFBF3] rounded-[16px] p-3 border text-[12px] mb-2"><b>📋 Điểm danh (chỉ ghi có mặt):</b><br>${rdata.rollcall||''}</div>`;
+    (rdata.experts||[]).forEach((e, idx)=>{
+      const color = e.role.includes('Khí tượng') ? 'bg-blue-50 border-blue-200' : e.role.includes('Văn hóa') ? 'bg-amber-50 border-amber-200' : 'bg-white border-[#F3E9D7]';
+      chatHtml += `<div class="${color} rounded-[16px] p-3 border mb-2"><div class="flex items-center gap-2 mb-1"><div class="w-6 h-6 rounded-full bg-black text-white text-[10px] flex items-center justify-center font-bold">${e.name[0]}</div><div class="font-bold text-[11px]">${e.name}</div><div class="text-[9px] px-1.5 py-0.5 rounded-full bg-white border">${e.role}</div><div class="text-[8px] px-1 rounded bg-black text-white">${e.provider} - ${e.provider==='mistral'?'mạnh lý luận':e.provider==='groq'?'mạnh kỹ thuật':'mạnh sáng tạo'}</div></div><div class="text-[13px] leading-relaxed whitespace-pre-wrap">${e.content||''}</div></div>`;
+    });
+    chatHtml += `<div class="bg-[#FFFBF3] rounded-[16px] p-3 border mt-3"><div class="text-[10px] mono font-bold opacity-60 mb-1">📝 TỔNG HỢP - Phó Quản Lý Điều Hành</div><div class="text-[13px]">${rdata.summary||''}</div></div>`;
+    document.getElementById('chatList').innerHTML = chatHtml;
+    document.getElementById('chatList').scrollTop = document.getElementById('chatList').scrollHeight;
     // Luu vao localStorage - local memory
     saveToLocalStorage();
   }catch(e){

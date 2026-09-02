@@ -316,7 +316,18 @@ async def run_council(cid: str):
         if cid not in councils_db: return {"error":"Council not found"}
         data=councils_db[cid]
         thuky=next((v for k,v in data["roles"].items() if v.get("core_type")=="thuky"), None)
-        rollcall = await asyncio.to_thread(call_llm_real, thuky["provider_info"] if thuky else get_provider_info("mistral"), thuky["system"] if thuky else "Ban la Thu Ky", f"Vấn đề: '{data['problem']}' - Điểm danh {len(data['roles'])} vai: {', '.join([r['short_name'] for r in data['roles'].values()])}", 500, 0.6) if thuky else f"Điểm danh: {', '.join([r['short_name'] for r in data['roles'].values()])}"
+        # FIX: diem danh chi ghi co mat, khong duoc bia vang mat
+        active_names = [data["roles"][rid]["short_name"] for rid in data["active_roles"] if rid in data["roles"]]
+        rollcall_prompt = f"""Vấn đề: '{data['problem']}' 
+Danh sách tham dự THỰC TẾ có mặt: {', '.join(active_names)} ({len(active_names)} người)
+Nhiệm vụ: Ghi điểm danh NGẮN GỌN, chỉ liệt kê những người CÓ MẶT ở trên, KHÔNG được bịa thêm người vắng mặt, không được ghi lý do vắng.
+Format: 
+- Ngày: hôm nay
+- Chủ trì: Trưởng Phòng Nhân Sự
+- Thư ký: Thư Ký Hội Đồng
+- Có mặt: {', '.join(active_names)}
+Chỉ ghi đúng danh sách có mặt, không thêm gì khác, 50-80 từ."""
+        rollcall = await asyncio.to_thread(call_llm_real, thuky["provider_info"] if thuky else get_provider_info("mistral"), thuky["system"] if thuky else "Ban la Thu Ky - chi ghi co mat, khong bia vang mat", rollcall_prompt, 300, 0.5) if thuky else f"Có mặt: {', '.join(active_names)}"
         experts=[]
         for rid,info in data["roles"].items():
             if info.get("core_type") in ["thuky","phoql","nhansu"]: continue
