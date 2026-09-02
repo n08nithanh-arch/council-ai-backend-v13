@@ -172,27 +172,94 @@ class CreateCouncilReq(BaseModel):
 class ChatMessage(BaseModel):
     message: str
 
+
 class SuggestReq(BaseModel):
     problem: str
+    count: int = 10
 
-def suggest_roles_by_context(problem: str, existing_roles: List[Dict]) -> List[Dict]:
+def suggest_roles_by_context(problem: str, existing_roles: List[Dict], needed: int = 10) -> List[Dict]:
     pl = problem.lower()
+    # Pool da dang theo ngu canh - Vir tung lam V10-V11
     km = {
-        "kỹ thuật|lập trình|code|phần mềm|AI|hệ thống": {"role": "Chuyên gia Kỹ thuật", "desc": "Phân tích kỹ thuật", "prompt": "Bạn là Chuyên gia Kỹ thuật.", "color": "#6EC1E4"},
-        "marketing|bán hàng|truyền thông|quảng cáo": {"role": "Chuyên gia Marketing", "desc": "Chiến lược marketing", "prompt": "Bạn là Chuyên gia Marketing.", "color": "#FF6B6B"},
-        "tài chính|đầu tư|kinh tế|tiền": {"role": "Chuyên gia Tài chính", "desc": "Phân tích tài chính", "prompt": "Bạn là Chuyên gia Tài chính.", "color": "#4ECDC4"},
-        "ngọc hoàng|đại đế|tôn giáo|tín ngưỡng|văn hóa dân gian|thần thoại": {"role": "Chuyên gia Văn hóa Dân gian & Tôn giáo", "desc": "Phân tích tín ngưỡng", "prompt": "Bạn là Chuyên gia Văn hóa Dân gian & Tôn giáo.", "color": "#F59E0B"},
-        "khí tượng|thủy văn|câu cá|thời tiết|mưa giông|gió|nhiệt độ|thủy triều|mưa hay nắng": {"role": "Chuyên gia Khí tượng Thủy văn", "desc": "Đánh giá thời tiết", "prompt": "Bạn là Chuyên gia Khí tượng Thủy văn. Đánh giá thời tiết mưa nắng.", "color": "#06B6D4"},
+        "kỹ thuật|lập trình|code|phần mềm|AI|hệ thống|api|bug": [
+            {"role": "Chuyên gia Kỹ thuật Phần mềm", "desc": "Kiến trúc hệ thống", "prompt": "Bạn là Chuyên gia Kỹ thuật Phần mềm - phân tích kiến trúc, bug, API.", "color": "#6EC1E4"},
+            {"role": "Chuyên gia AI/ML", "desc": "Mô hình AI", "prompt": "Bạn là Chuyên gia AI/ML - đánh giá mô hình, data.", "color": "#8B5CF6"},
+            {"role": "Chuyên gia DevOps", "desc": "Triển khai, vận hành", "prompt": "Bạn là Chuyên gia DevOps - CI/CD, Render, Docker.", "color": "#10B981"},
+        ],
+        "marketing|bán hàng|truyền thông|quảng cáo|thương hiệu": [
+            {"role": "Chuyên gia Marketing", "desc": "Chiến lược marketing", "prompt": "Bạn là Chuyên gia Marketing.", "color": "#FF6B6B"},
+            {"role": "Chuyên gia Content", "desc": "Nội dung truyền thông", "prompt": "Bạn là Chuyên gia Content - viết content.", "color": "#F59E0B"},
+        ],
+        "tài chính|đầu tư|kinh tế|tiền|doanh thu": [
+            {"role": "Chuyên gia Tài chính", "desc": "Phân tích tài chính", "prompt": "Bạn là Chuyên gia Tài chính.", "color": "#4ECDC4"},
+            {"role": "Chuyên gia Đầu tư", "desc": "Đánh giá đầu tư", "prompt": "Bạn là Chuyên gia Đầu tư.", "color": "#059669"},
+        ],
+        "ngọc hoàng|đại đế|tôn giáo|tín ngưỡng|văn hóa dân gian|thần thoại|tâm linh": [
+            {"role": "Chuyên gia Văn hóa Dân gian & Tôn giáo", "desc": "Phân tích tín ngưỡng", "prompt": "Bạn là Chuyên gia Văn hóa Dân gian & Tôn giáo.", "color": "#F59E0B"},
+            {"role": "Chuyên gia Thần thoại học", "desc": "Thần thoại", "prompt": "Bạn là Chuyên gia Thần thoại học.", "color": "#7C3AED"},
+        ],
+        "khí tượng|thủy văn|câu cá|thời tiết|mưa giông|gió|nhiệt độ|thủy triều|mưa hay nắng": [
+            {"role": "Chuyên gia Khí tượng Thủy văn", "desc": "Đánh giá thời tiết", "prompt": "Bạn là Chuyên gia Khí tượng Thủy văn. Đánh giá thời tiết mưa nắng, gió, nhiệt độ, thủy triều cho câu cá.", "color": "#06B6D4"},
+            {"role": "Chuyên gia Thủy sản", "desc": "Tập tính cá theo thời tiết", "prompt": "Bạn là Chuyên gia Thủy sản - tập tính cá.", "color": "#0EA5E9"},
+        ],
+        "phim|điện ảnh|netflix|cinema|review phim|phim hay": [
+            {"role": "Chuyên gia Điện ảnh", "desc": "Phân tích phim", "prompt": "Bạn là Chuyên gia Điện ảnh - phân tích kịch bản, đạo diễn, diễn xuất.", "color": "#E11D48"},
+            {"role": "Chuyên gia Phê bình Phim", "desc": "Review phim", "prompt": "Bạn là Chuyên gia Phê bình Phim - đánh giá phim khách quan, điểm 10.", "color": "#BE185D"},
+            {"role": "Chuyên gia Xu hướng Streaming", "desc": "Trending Netflix, rạp", "prompt": "Bạn là Chuyên gia Xu hướng Streaming - biết phim nào đang hot, rating.", "color": "#7C3AED"},
+            {"role": "Chuyên gia Tâm lý Khán giả", "desc": "Thị hiếu khán giả", "prompt": "Bạn là Chuyên gia Tâm lý Khán giả - phân tích gu phim theo tâm trạng.", "color": "#DB2777"},
+            {"role": "Chuyên gia Văn hóa Đại chúng", "desc": "Văn hóa pop", "prompt": "Bạn là Chuyên gia Văn hóa Đại chúng - liên kết phim với văn hóa.", "color": "#F59E0B"},
+            {"role": "Chuyên gia Kỹ xảo & Âm thanh", "desc": "Kỹ xảo, nhạc phim", "prompt": "Bạn là Chuyên gia Kỹ xảo & Âm thanh - đánh giá hình ảnh, âm thanh.", "color": "#06B6D4"},
+            {"role": "Chuyên gia Thị trường Phim", "desc": "Doanh thu, phòng vé", "prompt": "Bạn là Chuyên gia Thị trường Phim - box office, doanh thu.", "color": "#059669"},
+            {"role": "Chuyên gia Lịch sử Điện ảnh", "desc": "Bối cảnh phim", "prompt": "Bạn là Chuyên gia Lịch sử Điện ảnh - đặt phim trong bối cảnh.", "color": "#6B7280"},
+            {"role": "Chuyên gia Kịch bản", "desc": "Cấu trúc kịch bản", "prompt": "Bạn là Chuyên gia Kịch bản - phân tích plot twist.", "color": "#111827"},
+            {"role": "Chuyên gia Diễn xuất", "desc": "Diễn viên", "prompt": "Bạn là Chuyên gia Diễn xuất - đánh giá diễn viên.", "color": "#EF4444"},
+        ],
     }
-    suggested = []
-    existing_names = [r["role"].lower() for r in existing_roles]
-    for pat, tpl in km.items():
+    # Tim pool phu hop
+    pool = []
+    for pat, roles in km.items():
         if re.search(pat, pl):
-            if tpl["role"].lower() not in existing_names and tpl["role"] not in [s["role"] for s in suggested]:
-                suggested.append(tpl)
-    if not suggested:
-        suggested = [{"role": "Chuyên gia Tổng hợp", "desc": "Phân tích tổng hợp", "prompt": f"Bạn là Chuyên gia Tổng hợp cho vấn đề: {problem[:100]}", "color": "#6EC1E4"}]
-    return suggested[:3]
+            pool.extend(roles)
+    # Neu khong khop, dung pool phim mac dinh cho "phim hay hom nay" hoac pool tong hop da dang
+    if not pool:
+        # Goi LLM de tao pool da dang theo van de (V10-V11 logic)
+        try:
+            provider = get_provider_info(ALIVE_PROVIDERS[0]["provider"] if ALIVE_PROVIDERS else "mistral")
+            prompt_gen = f"Vấn đề: '{problem}' - Hãy liệt kê {needed} chuyên gia ĐA DẠNG cần thiết để phân tích vấn đề này. Mỗi chuyên gia khác nhau, không trùng. Trả về JSON array các object có keys: role, desc. Ví dụ: [{{\"role\": \"Chuyên gia X\", \"desc\": \"...\"}}]. Chỉ trả về JSON, không thêm gì."
+            raw = call_llm_real(provider, "Bạn là Trưởng Phòng Nhân Sự - tạo danh sách chuyên gia đa dạng.", prompt_gen, 800, 0.7)
+            # Parse JSON tu raw
+            import json as js
+            m = re.search(r'\[.*\]', raw, re.S)
+            if m:
+                arr = js.loads(m.group(0))
+                for it in arr[:needed]:
+                    role = it.get("role","Chuyên gia").strip()
+                    if role and len(pool) < needed:
+                        pool.append({"role": role, "desc": it.get("desc","Phân tích chuyên sâu"), "prompt": f"Bạn là {role} - {it.get('desc','')} Ngữ cảnh: {problem[:200]}", "color": f"#{hash(role) % 0xFFFFFF:06x}"})
+        except Exception as e:
+            print(f"Gen pool LLM fail {e}")
+        # Fallback pool tong hop da dang
+        if not pool:
+            fallback_names = ["Chuyên gia Tổng hợp", "Chuyên gia Phân tích Dữ liệu", "Chuyên gia Tâm lý", "Chuyên gia Xã hội học", "Chuyên gia Chiến lược", "Chuyên gia Sáng tạo", "Chuyên gia Đánh giá Rủi ro", "Chuyên gia Truyền thông", "Chuyên gia Kinh nghiệm Người dùng", "Chuyên gia Đạo đức"]
+            for i, name in enumerate(fallback_names[:needed]):
+                pool.append({"role": name, "desc": f"Góc nhìn {name}", "prompt": f"Bạn là {name} cho vấn đề: {problem[:200]}", "color": f"#{hash(name) % 0xFFFFFF:06x}"})
+
+    # Loc trung voi existing
+    existing_names = [r["role"].lower() for r in existing_roles]
+    filtered = []
+    for tpl in pool:
+        if tpl["role"].lower() not in existing_names and tpl["role"] not in [s["role"] for s in filtered]:
+            filtered.append(tpl)
+    # Neu van thieu, tao them tu fallback
+    idx = 0
+    while len(filtered) < needed:
+        idx += 1
+        name = f"Chuyên gia Bổ sung {idx}"
+        if name.lower() not in existing_names:
+            filtered.append({"role": name, "desc": "Bổ sung góc nhìn", "prompt": f"Bạn là {name} cho {problem[:200]}", "color": "#6EC1E4"})
+        if idx > 20: break
+    return filtered[:needed]
+
 
 def make_bien_ban_filename(problem: str, ext: str = "txt"):
     now = datetime.now()
@@ -248,7 +315,8 @@ def update_personnel(pid: str, req: dict):
 @app.post("/api/personnel/suggest")
 def suggest_personnel(req: SuggestReq):
     existing=load_personnel()
-    suggested=suggest_roles_by_context(req.problem, existing)
+    needed = getattr(req, 'count', 10) or 10
+    suggested=suggest_roles_by_context(req.problem, existing, needed=needed)
     auto_added = []
     current = load_personnel()
     existing_roles_lower = [p["role"].lower() for p in current]
@@ -269,7 +337,7 @@ def suggest_personnel(req: SuggestReq):
             auto_added.append(new_role)
     if auto_added:
         Path(PERSONNEL_FILE).write_text(json.dumps(current, ensure_ascii=False, indent=2), encoding='utf-8')
-    return {"problem":req.problem,"suggested":suggested,"auto_added":auto_added,"auto_call":True}
+    return {"problem":req.problem,"suggested":suggested,"auto_added":auto_added,"auto_call":True, "needed": needed}
 
 @app.get("/app")
 @app.get("/frontend")

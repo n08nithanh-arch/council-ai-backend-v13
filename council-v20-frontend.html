@@ -189,11 +189,12 @@ async function suggestRoles(){
   const box=document.getElementById('suggestBox');
   box.classList.remove('hidden');
   box.innerHTML='🧠 Nhân Sự đang phân tích ngữ cảnh và sắp xếp API theo khía cạnh mạnh (không chia đều vòng tròn)...';
+  const needed = expertCount || 10;
   const endpoints = ['/personnel/suggest','/api/suggest','/suggest','/api/personnel/suggest','/personnel/suggest-legacy'];
   let success = false;
   for(let ep of endpoints){
     try{
-      const r = await fetch(API_BASE+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({problem})});
+      const r = await fetch(API_BASE+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({problem, count: needed})});
       if(r.ok){
         const d = await r.json();
         if(d.error){ box.innerHTML = `<div class=text-red-600>Lỗi: ${d.error}</div>`; continue; }
@@ -438,7 +439,7 @@ async function updateExpertSelection(){
     const missing = needed - sorted.length;
     document.getElementById('expertCountLabel').textContent = `Đang tạo thêm ${missing} chuyên gia...`;
     try{
-      const r = await fetch(API_BASE+'/personnel/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({problem})});
+      const r = await fetch(API_BASE+'/personnel/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({problem, count: needed})});
       if(r.ok){
         await loadPersonnel();
         const newAll = personnel.filter(p=>p.type!=='core');
