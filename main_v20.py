@@ -381,7 +381,7 @@ def save_bien_ban_multi_format(minutes_content: str, problem: str):
     saved_files = []
     
     # 1. Luu .txt (cung noi dung)
-    txt_path = MEETINGS_DIR / base_txt
+    txt_path = DATA_DIR / base_txt
     txt_path.write_text(minutes_content, encoding='utf-8')
     saved_files.append(str(txt_path))
     
@@ -418,7 +418,7 @@ def save_bien_ban_multi_format(minutes_content: str, problem: str):
                 if line.strip():
                     doc.add_paragraph(line)
         
-        docx_path = MEETINGS_DIR / base_docx
+        docx_path = DATA_DIR / base_docx
         doc.save(str(docx_path))
         saved_files.append(str(docx_path))
     except ImportError:
@@ -447,10 +447,10 @@ def suggest_personnel(req: SuggestReq):
     auto_added = []
     current = load_personnel()
     existing_roles_lower = [p["role"].lower() for p in current]
-    for s in suggested:
+    for idx, s in enumerate(suggested):
         if s["role"].lower() not in existing_roles_lower:
             nid = f"role_{uuid.uuid4().hex[:6]}"
-            prov_idx = (existing_count_local + idx) % len(ALIVE_PROVIDERS) if ALIVE_PROVIDERS else 0
+            prov_idx = (len(current) + idx) % len(ALIVE_PROVIDERS) if ALIVE_PROVIDERS else 0
             prov = get_provider_info(ALIVE_PROVIDERS[prov_idx]["provider"] if ALIVE_PROVIDERS else "mistral")
             new_role = {
                 "id": nid, "name": s["role"], "role": s["role"],
@@ -475,10 +475,10 @@ def suggest_legacy(req: dict):
     auto_added = []
     current = load_personnel()
     existing_roles_lower = [p["role"].lower() for p in current]
-    for s in suggested:
+    for idx, s in enumerate(suggested):
         if s["role"].lower() not in existing_roles_lower:
             nid = f"role_{uuid.uuid4().hex[:6]}"
-            prov_idx = (existing_count_local + idx) % len(ALIVE_PROVIDERS) if ALIVE_PROVIDERS else 0
+            prov_idx = (len(current) + idx) % len(ALIVE_PROVIDERS) if ALIVE_PROVIDERS else 0
             prov = get_provider_info(ALIVE_PROVIDERS[prov_idx]["provider"] if ALIVE_PROVIDERS else "mistral")
             new_role = {
                 "id": nid, "name": s["role"], "role": s["role"],
