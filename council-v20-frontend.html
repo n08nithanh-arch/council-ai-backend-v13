@@ -277,7 +277,6 @@ function saveToLocalStorage(){
   console.log('Đã lưu vào localStorage:', key);
 }
 
-let lastMinutesFiles = [];
 function downloadMinutes(format){
   if(!lastMinutes){alert('Chưa có biên bản');return;}
   format = format || 'txt';
