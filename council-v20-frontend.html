@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Council AI V13 - Local Memory + Google Drive Ready</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+.mono{font-family: 'Courier New', monospace}
+#mentionBox{position:absolute; bottom:60px; left:12px; right:12px; background:white; border:1px solid #F3E9D7; border-radius:16px; max-height:200px; overflow-y:auto; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:50; display:none;}
+.mention-item{padding:8px 12px; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:13px;}
+.mention-item:hover, .mention-item.active{background:#FFFBF3; border-left:3px solid black;}
+.mention-item .avatar{width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:10px;}
+</style>
+</head>
+<body class="bg-[#FFFBF3] min-h-screen">
+<div class="max-w-6xl mx-auto p-4">
+<div class="bg-white rounded-[24px] p-5 border border-[#F3E9D7] shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h1 class="text-[20px] font-bold">🏢 Council AI V13 CLEAN</h1>
+<div class="text-[11px] mono opacity-60">Local Memory Meetings + Google Drive Ready + Nhân Sự phân API theo ngữ cảnh</div>
+<div class="text-[10px] mono opacity-50 mt-1">Backend để trên Google Drive được: chỉ cần đồng bộ thư mục D:/council-ai-backend/ lên Drive, chạy python main_v20.py ở bất kỳ máy nào</div>
+</div>
+<div class="text-[10px] mono bg-black text-white px-2 py-1 rounded-full" id="apiStatus">3 API SONG THAT</div>
+</div>
+
+<div class="grid grid-cols-3 gap-4">
+<div class="col-span-1">
+<div class="text-[11px] mono font-bold mb-2">👥 DANH SÁCH HỘI ĐỒNG (Nhân Sự quản lý - có thể xoá/sửa)</div>
+<div id="personnelList" class="space-y-2 max-h-[400px] overflow-y-auto"></div>
+
+<div class="mt-3 p-3 rounded-[16px] bg-white border border-[#F3E9D7]">
+<div class="flex items-center justify-between mb-2">
+<div class="text-[11px] mono font-bold">🎚️ SỐ LƯỢNG CHUYÊN GIA (không tính 3 CORE)</div>
+<span id="expertCountLabel" class="text-[11px] px-2 py-0.5 rounded-full bg-black text-white mono">3 chuyên gia (tổng 6)</span>
+</div>
+<input type="range" id="expertCountSlider" min="0" max="10" value="3" class="w-full h-2 bg-[#F3E9D7] rounded-lg appearance-none cursor-pointer accent-black">
+<div class="flex justify-between text-[9px] mono opacity-50 mt-1">
+<span>0 (chỉ 3 CORE)</span><span>5 thêm (tổng 8)</span><span>10 thêm (tổng 13)</span>
+</div>
+<div class="text-[10px] opacity-60 mt-2">Boss gọi 10 chuyên gia = 3 CORE + 7 chuyên gia thêm. Nếu danh sách thiếu, Nhân Sự tự tạo thêm cho đủ.</div>
+</div>
+
+<div class="mt-3">
+<div class="text-[11px] mono font-bold">➕ Thêm chuyên gia tự đặt</div>
+<input id="newRoleName" placeholder="VD: Chuyên gia Khí tượng..." class="w-full mt-1 h-8 px-3 rounded-full border border-[#F3E9D7] text-[12px]">
+<input id="newRoleDesc" placeholder="Mô tả ngắn" class="w-full mt-1 h-8 px-3 rounded-full border border-[#F3E9D7] text-[12px]">
+<textarea id="newRolePrompt" placeholder="System prompt chi tiết - Nhân Sự đảm nhận đặt chức danh và prompt, Chủ sự tinh chỉnh" class="w-full mt-1 p-2 rounded-[12px] border border-[#F3E9D7] text-[12px] h-20"></textarea>
+<button onclick="addCustomRole()" class="mt-1 h-8 px-4 rounded-full bg-black text-white text-[11px]">Thêm vào Danh sách</button>
+</div>
+</div>
+
+<div class="col-span-2">
+<div class="flex gap-2 mb-2">
+<input id="problemInput" placeholder="Nhập vấn đề - VD: ngọc hoàng đại đế có tồn tại không? / Có nên đi câu ngày mai?" class="flex-1 h-10 px-4 rounded-full border border-[#F3E9D7] text-[13px]">
+<button onclick="suggestRoles()" class="h-10 px-4 rounded-full bg-[#FFFBF3] border text-[11px] font-semibold">🧠 Nhân Sự đề xuất (theo ngữ cảnh)</button>
+</div>
+<div id="suggestBox" class="hidden bg-[#FFFBF3] rounded-[16px] p-3 border mb-3 text-[12px]"></div>
+<div class="flex gap-2 mb-3">
+<button onclick="createAndRun()" class="h-10 px-6 rounded-full bg-black text-white text-[13px] font-bold">Triệu tập cuộc họp • REAL API</button>
+<span id="selectedInfo" class="text-[11px] mono self-center opacity-60">Đã chọn 3 CORE</span>
+</div>
+
+<div id="runningBox" class="hidden bg-white rounded-[16px] p-4 border text-center">
+<div class="text-[13px] font-bold">⏳ Đang họp - Nhân Sự phân API theo ngữ cảnh...</div>
+<div class="text-[11px] mono opacity-60 mt-1">API mạnh về khía cạnh nào thì giao vai đó, không chia đều vòng tròn</div>
+</div>
+
+<div id="resultBox" class="hidden space-y-4">
+<div class="flex gap-2 mt-2" id="meetingControls">
+<button id="stopBtn" onclick="stopMeeting()" class="hidden h-10 px-6 rounded-full bg-red-600 text-white text-[13px] font-bold">⏹ Dừng cuộc họp & Xuất biên bản (Local Memory)</button>
+<span id="meetingStatus" class="text-[11px] mono opacity-60 self-center">Đang họp - có thể @tag để hỏi tiếp</span>
+</div>
+<div id="chatList" class="bg-white rounded-[16px] border max-h-[300px] overflow-y-auto p-3 space-y-2"></div>
+<div class="p-3 border-t bg-white relative rounded-b-[16px]">
+<div id="mentionBox"></div>
+<div class="flex gap-2">
+<input id="chatInput" placeholder="Gõ @ để tag chuyên gia - dùng ↑↓ để di chuyển, Enter để chọn - @Thư Ký để gọi thêm vai" class="flex-1 h-10 px-4 rounded-full border text-[12px]">
+<button onclick="sendChat()" class="h-10 px-5 rounded-full bg-black text-white text-[12px]">Gửi</button>
+</div>
+</div>
+
+<div class="mt-4" id="fullMinutesSection" style="display:none">
+<div class="text-[10px] mono font-bold opacity-60 mb-2">BIÊN BẢN CHÍNH - TÓM TẮT TỔNG HỢP CỦA PHÓ QUẢN LÝ ĐIỀU HÀNH (Lưu trên Local Memory)</div>
+<div id="summaryContent" class="bg-white rounded-[16px] p-4 border text-[13px]"></div>
+<div class="mt-3">
+<div class="text-[10px] mono font-bold opacity-60 mb-2">BIÊN BẢN ĐẦY ĐỦ - Tên chuẩn: biên bản họp - tóm tắt vấn đề - dd-mm-yyyy hh-mm-ss.txt/.docx</div>
+<div id="minutesContent" class="bg-white rounded-[16px] p-4 border text-[12px] mono whitespace-pre-wrap max-h-[400px] overflow-y-auto" style="display:none"></div>
+<div class="flex gap-2 flex-wrap mt-2">
+<div class="flex rounded-full overflow-hidden border border-black">
+<button onclick="downloadMinutes('txt')" class="h-9 px-4 bg-white text-black text-[12px] font-semibold">📄 Lưu .txt (Local Memory)</button>
+<button onclick="downloadMinutes('docx')" class="h-9 px-4 bg-black text-white text-[12px] font-semibold border-l">.docx Word (Local Memory)</button>
+</div>
+<button onclick="copyMinutes()" class="h-9 px-4 rounded-full bg-white border text-[12px]">⎙ Copy biên bản chính</button>
+<button onclick="saveToLocalStorage()" class="h-9 px-4 rounded-full bg-[#FFFBF3] border text-[11px]">💾 Lưu vào LocalStorage</button>
+</div>
+<div class="text-[10px] mono opacity-50 mt-1">Biên bản lưu trên RAM + browser localStorage, không ghi ra disk data/meetings/. Backend có thể để trên Google Drive: đồng bộ thư mục D:/council-ai-backend/ lên Drive là chạy được ở mọi máy.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const API_BASE = location.origin;
+let personnel = [];
+let selectedIds = new Set(['core_thuky','core_phoql','core_nhansu']);
+let currentCouncilId = null;
+let lastMinutes = '';
+let lastBaseName = '';
+let lastMinutesFiles = [];
+let expertCount = 3;
+let councils_db_roles = null;
+let isMeetingStopped = false;
+let mentionActiveIndex = -1;
+let mentionFiltered = [];
+
+async function loadPersonnel(){
+  try{
+    const r = await fetch(API_BASE + '/personnel');
+    personnel = await r.json();
+    renderPersonnel();
+    document.getElementById('apiStatus').textContent = personnel.length + ' vai - 3 API';
+  }catch(e){ console.error(e); }
+}
+
+function renderPersonnel(){
+  const list = document.getElementById('personnelList');
+  list.innerHTML = personnel.map(p=>{
+    const isCore = p.type==='core';
+    const isSelected = selectedIds.has(p.id);
+    return `<div class="flex items-center gap-2 p-2 rounded-[12px] border ${isSelected?'bg-[#FFFBF3] border-black':'bg-white'}">
+      <input type="checkbox" ${isSelected?'checked':''} onchange="toggleSelect('${p.id}')" ${isCore?'disabled':''}>
+      <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style="background:${p.color}">${p.name[0]}</div>
+      <div class="flex-1">
+        <div class="text-[11px] font-semibold">${p.name} <span class="text-[8px] px-1 rounded bg-[#FFFBF3] border">${p.provider} - ${p.provider==='mistral'?'mạnh lý luận':p.provider==='groq'?'mạnh kỹ thuật':p.provider==='openrouter'?'mạnh sáng tạo':'auto'}</span></div>
+        <div class="text-[10px] opacity-60">${p.role}</div>
+      </div>
+      ${!isCore?`<button onclick="deleteRole('${p.id}')" class="text-[10px]">🗑️</button><button onclick="editRolePrompt('${p.id}')" class="text-[10px]">✏️</button>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('selectedInfo').textContent = `Đã chọn ${selectedIds.size} (${selectedIds.size-3} chuyên gia thêm + 3 CORE)`;
+}
+
+function toggleSelect(id){
+  if(selectedIds.has(id)) selectedIds.delete(id); else selectedIds.add(id);
+  renderPersonnel();
+}
+
+async function addCustomRole(){
+  const role = document.getElementById('newRoleName').value.trim();
+  const desc = document.getElementById('newRoleDesc').value.trim();
+  const prompt = document.getElementById('newRolePrompt').value.trim();
+  if(!role){ alert('Nhập tên vai'); return; }
+  const r = await fetch(API_BASE + '/personnel', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({role, desc, system_prompt: prompt})});
+  const d = await r.json();
+  if(d.error){ alert(d.error); return; }
+  loadPersonnel();
+  document.getElementById('newRoleName').value=''; document.getElementById('newRoleDesc').value=''; document.getElementById('newRolePrompt').value='';
+}
+
+async function deleteRole(id){
+  if(!confirm('Xoá vai này?')) return;
+  const r = await fetch(API_BASE + '/personnel/' + id, {method:'DELETE'});
+  const d = await r.json();
+  if(d.error){ alert(d.error); return; }
+  selectedIds.delete(id);
+  loadPersonnel();
+}
+
+async function editRolePrompt(id){
+  const p = personnel.find(x=>x.id===id);
+  if(!p) return;
+  const newDesc = prompt('Chỉnh mô tả:', p.desc||'');
+  if(newDesc===null) return;
+  const newPrompt = prompt('Chỉnh system prompt (Nhân Sự đặt, Chủ sự tinh chỉnh):', p.system_prompt||'');
+  if(newPrompt===null) return;
+  const newProvider = prompt('Phân công API theo ngữ cảnh (mistral=ly luan, groq=ky thuat, openrouter=sang tao):', p.provider||'mistral');
+  const r = await fetch(API_BASE + '/personnel/' + id, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({desc: newDesc, system_prompt: newPrompt, provider: newProvider})});
+  const d = await r.json();
+  if(d.error){ alert(d.error); return; }
+  loadPersonnel();
+}
+
+async function suggestRoles(){
+  const problem=document.getElementById('problemInput').value.trim();
+  if(!problem){alert('Nhập vấn đề trước - để Nhân Sự phân tích ngữ cảnh');return;}
+  const box=document.getElementById('suggestBox');
+  box.classList.remove('hidden');
+  box.innerHTML='🧠 Nhân Sự đang phân tích ngữ cảnh và sắp xếp API theo khía cạnh mạnh (không chia đều vòng tròn)...';
+  const endpoints = ['/personnel/suggest','/api/suggest','/suggest','/api/personnel/suggest','/personnel/suggest-legacy'];
+  let success = false;
+  for(let ep of endpoints){
+    try{
+      const r = await fetch(API_BASE+ep,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({problem})});
+      if(r.ok){
+        const d = await r.json();
+        if(d.error){ box.innerHTML = `<div class=text-red-600>Lỗi: ${d.error}</div>`; continue; }
+        const suggested = d.suggested || [];
+        const auto_added = d.auto_added || [];
+        box.innerHTML = `<div class=font-bold text-[11px] mb-2>🧠 Nhân Sự (phụ trách) đã phân tích "${problem.slice(0,40)}..." và đề xuất ${suggested.length} vai - API sắp xếp theo ngữ cảnh:</div>` + 
+          suggested.map(s=>`<div class="bg-white rounded-[12px] p-2 mb-2 border flex justify-between"><div><div class="font-semibold text-[12px]">${s.role} <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-[#FEF9F0] border">${s.provider||'auto'} - ${s.provider==='mistral'?'mạnh lý luận':s.provider==='groq'?'mạnh kỹ thuật/tốc độ':s.provider==='openrouter'?'mạnh sáng tạo':''}</span></div><div class="text-[11px] opacity-60">${s.desc}</div></div></div>`).join('') +
+          (auto_added.length>0 ? `<div class="mt-2 text-[11px] p-2 rounded bg-green-50 border">✅ Đã tự thêm ${auto_added.length} vai vào Danh sách - Đã phân công API theo ngữ cảnh</div>` : '');
+        setTimeout(()=>{ loadPersonnel(); }, 600);
+        success = true;
+        break;
+      }
+    }catch(e){ console.log('Endpoint '+ep+' failed', e); }
+  }
+  if(!success){
+    box.innerHTML = '<div class="text-red-600 text-[12px]">❌ Lỗi gợi ý 404 - Chạy backend V13 mới: python main_v20.py và mở qua http://localhost:8000/app</div>';
+  }
+}
+
+async function createAndRun(){
+  const problem = document.getElementById('problemInput').value.trim();
+  if(!problem){ alert('Nhập vấn đề'); return; }
+  if(selectedIds.size<3){ alert('Chọn ít nhất 3 CORE'); return; }
+  document.getElementById('runningBox').classList.remove('hidden');
+  document.getElementById('resultBox').classList.add('hidden');
+  try{
+    const r = await fetch(API_BASE + '/councils', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({problem, selected_personnel_ids: Array.from(selectedIds), room: "Local Memory"})});
+    const data = await r.json();
+    if(data.error){ alert(data.error); document.getElementById('runningBox').classList.add('hidden'); return; }
+    currentCouncilId = data.id;
+    councils_db_roles = personnel.filter(p=>selectedIds.has(p.id));
+    const r2 = await fetch(API_BASE + `/councils/${currentCouncilId}/run`, {method:'POST'});
+    const rdata = await r2.json();
+    if(rdata.error){ alert(rdata.error); document.getElementById('runningBox').classList.add('hidden'); return; }
+    document.getElementById('runningBox').classList.add('hidden');
+    document.getElementById('resultBox').classList.remove('hidden');
+    document.getElementById('stopBtn').classList.remove('hidden');
+    document.getElementById('meetingStatus').textContent='Đang họp - có thể @tag để hỏi tiếp - Bấm Dừng để xuất biên bản (lưu trên local memory)';
+    isMeetingStopped=false;
+    document.getElementById('summaryContent').textContent = rdata.summary || '';
+    lastMinutes = rdata.minutes_content || '';
+    lastBaseName = rdata.base_name || '';
+    lastMinutesFiles = rdata.minutes_files || [];
+    document.getElementById('minutesContent').textContent = lastMinutes;
+    document.getElementById('chatList').innerHTML = `<div class="bg-[#FFFBF3] rounded-[12px] p-2 text-[11px]">📋 Điểm danh: ${rdata.rollcall||''}</div>` + (rdata.experts||[]).map(e=>`<div class="bg-white rounded-[12px] p-2 border"><div class="font-semibold text-[11px]">${e.name} - ${e.role} [${e.provider} - ${e.provider==='mistral'?'mạnh lý luận':e.provider==='groq'?'mạnh kỹ thuật':'mạnh sáng tạo'}]</div><div class="text-[12px] mt-1">${e.content||''}</div></div>`).join('');
+    // Luu vao localStorage - local memory
+    saveToLocalStorage();
+  }catch(e){
+    console.error(e);
+    document.getElementById('runningBox').classList.add('hidden');
+    alert('Lỗi: ' + e);
+  }
+}
+
+function stopMeeting(){
+  if(!currentCouncilId){ alert('Chưa có cuộc họp'); return; }
+  isMeetingStopped = true;
+  document.getElementById('stopBtn').classList.add('hidden');
+  document.getElementById('meetingStatus').textContent = 'Đã dừng - Đã xuất biên bản (lưu trên local memory)';
+  document.getElementById('minutesContent').style.display = 'block';
+  const fullSec = document.getElementById('fullMinutesSection');
+  if(fullSec) fullSec.style.display = 'block';
+  const chatList = document.getElementById('chatList');
+  if(chatList){
+    chatList.innerHTML += `<div class="bg-green-50 border border-green-200 rounded-[16px] p-3 text-[12px]"><b>📄 Đã dừng cuộc họp - Biên bản lưu trên Local Memory (RAM + localStorage), không ghi ra disk data/meetings/. Có thể tải .txt / .docx</b></div>`;
+    chatList.scrollTop = chatList.scrollHeight;
+  }
+  saveToLocalStorage();
+}
+
+function saveToLocalStorage(){
+  if(!lastMinutes) return;
+  const key = 'council_minutes_' + (lastBaseName || new Date().toISOString());
+  const data = {baseName: lastBaseName, content: lastMinutes, time: new Date().toISOString(), problem: document.getElementById('problemInput').value};
+  localStorage.setItem(key, JSON.stringify(data));
+  // Luu danh sach
+  let list = JSON.parse(localStorage.getItem('council_minutes_list')||'[]');
+  list.unshift({key, baseName: lastBaseName, time: data.time, problem: data.problem});
+  list = list.slice(0,20);
+  localStorage.setItem('council_minutes_list', JSON.stringify(list));
+  console.log('Đã lưu vào localStorage:', key);
+}
+
+let lastMinutesFiles = [];
+function downloadMinutes(format){
+  if(!lastMinutes){alert('Chưa có biên bản');return;}
+  format = format || 'txt';
+  const now = new Date();
+  const timeStr = `${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+  const problemRaw = document.getElementById('problemInput').value.trim().slice(0,50) || 'Cuoc hop hoi dong';
+  const problem = problemRaw.replace(/[^\w\s\-]/g,'').trim();
+  const baseName = lastBaseName || `bien ban hop - ${problem} - ${timeStr}`;
+  let blob, ext, mime;
+  if(format === 'docx'){
+    // Tao docx don gian tu text (thuc te la txt nhung doi ten docx, hoac dung docx-js neu co)
+    // De don gian, tao file txt nhung co header Word
+    const docxContent = lastMinutes;
+    blob = new Blob([docxContent], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    ext = '.docx';
+  } else {
+    blob = new Blob([lastMinutes], {type: 'text/plain'});
+    ext = '.txt';
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = baseName + ext;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyMinutes(){
+  if(!lastMinutes){alert('Chưa có');return;}
+  navigator.clipboard.writeText(lastMinutes).then(()=>alert('Đã copy biên bản chính'));
+}
+
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if(!msg || !currentCouncilId){ return; }
+  input.value='';
+  document.getElementById('mentionBox').style.display='none';
+  const chatList = document.getElementById('chatList');
+  chatList.innerHTML += `<div class="bg-black text-white rounded-[12px] p-2 text-[11px] self-end ml-10">Chủ sự: ${msg}</div>`;
+  try{
+    const r = await fetch(API_BASE + `/councils/${currentCouncilId}/chat`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message: msg})});
+    const d = await r.json();
+    if(d.action==='mention' && d.results){
+      for(let rid in d.results){
+        const res = d.results[rid];
+        chatList.innerHTML += `<div class="bg-white rounded-[12px] p-2 border"><div class="font-semibold text-[11px]">${res.short_name} [${res.provider}]</div><div class="text-[12px]">${res.text}</div></div>`;
+      }
+    } else if(d.action==='add_team'){
+      chatList.innerHTML += `<div class="bg-green-50 border rounded-[12px] p-2 text-[11px]">✅ ${d.text}</div>`;
+      // Reload roles
+      setTimeout(()=>{ loadPersonnel(); }, 500);
+    } else {
+      chatList.innerHTML += `<div class="bg-white rounded-[12px] p-2 border"><div class="font-semibold text-[11px]">${d.short_name||d.name} </div><div class="text-[12px]">${d.text||''}</div></div>`;
+    }
+    chatList.scrollTop = chatList.scrollHeight;
+  }catch(e){ console.error(e); }
+}
+
+function showMentionBox(filterText){
+  const box = document.getElementById('mentionBox');
+  if(!currentCouncilId || !personnel.length){ return; }
+  const activeRoles = councils_db_roles || personnel.filter(p=>selectedIds.has(p.id));
+  const filter = (filterText||'').toLowerCase();
+  mentionFiltered = activeRoles.filter(p => p.name.toLowerCase().includes(filter) || p.role.toLowerCase().includes(filter));
+  if(mentionFiltered.length===0){ box.style.display='none'; return; }
+  box.innerHTML = mentionFiltered.map((p,i)=>`<div class="mention-item ${i===mentionActiveIndex?'active':''}" data-index="${i}" onclick="selectMention(${i})"><div class="avatar" style="background:${p.color}">${p.name[0]}</div><div><div class="font-semibold">${p.name}</div><div class="text-[10px] opacity-60">${p.role} [${p.provider}]</div></div></div>`).join('');
+  box.style.display='block';
+}
+
+function selectMention(idx){
+  const item = mentionFiltered[idx];
+  if(!item) return;
+  const input = document.getElementById('chatInput');
+  const cursorPos = input.selectionStart;
+  const textBefore = input.value.substring(0, cursorPos);
+  const atPos = textBefore.lastIndexOf('@');
+  if(atPos>=0){
+    const textAfter = input.value.substring(cursorPos);
+    input.value = input.value.substring(0, atPos) + '@' + item.name + ' ' + textAfter;
+    input.focus();
+    input.setSelectionRange(atPos + item.name.length + 2, atPos + item.name.length + 2);
+  } else {
+    input.value += '@' + item.name + ' ';
+  }
+  document.getElementById('mentionBox').style.display='none';
+  mentionActiveIndex = -1;
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadPersonnel();
+  const slider = document.getElementById('expertCountSlider');
+  const label = document.getElementById('expertCountLabel');
+  if(slider){
+    slider.addEventListener('input', (e)=>{
+      expertCount = parseInt(e.target.value);
+      updateExpertSelection();
+    });
+  }
+  const chatInput = document.getElementById('chatInput');
+  if(chatInput){
+    chatInput.addEventListener('input', (e)=>{
+      const val = e.target.value;
+      const cursorPos = e.target.selectionStart;
+      const textBefore = val.substring(0, cursorPos);
+      const atPos = textBefore.lastIndexOf('@');
+      if(atPos>=0){
+        const query = textBefore.substring(atPos+1);
+        if(query.includes(' ') || query.includes('\n')){ document.getElementById('mentionBox').style.display='none'; return; }
+        showMentionBox(query);
+      } else {
+        document.getElementById('mentionBox').style.display='none';
+      }
+    });
+    chatInput.addEventListener('keydown', (e)=>{
+      const box = document.getElementById('mentionBox');
+      if(box.style.display==='block'){
+        if(e.key==='ArrowDown'){
+          e.preventDefault();
+          mentionActiveIndex = Math.min(mentionActiveIndex+1, mentionFiltered.length-1);
+          const q = document.getElementById('chatInput').value.split('@').pop();
+          showMentionBox(q);
+        } else if(e.key==='ArrowUp'){
+          e.preventDefault();
+          mentionActiveIndex = Math.max(mentionActiveIndex-1, 0);
+          const q = document.getElementById('chatInput').value.split('@').pop();
+          showMentionBox(q);
+        } else if(e.key==='Enter' && mentionActiveIndex>=0){
+          e.preventDefault();
+          selectMention(mentionActiveIndex);
+        } else if(e.key==='Escape'){
+          box.style.display='none';
+          mentionActiveIndex=-1;
+        }
+      }
+    });
+  }
+});
+
+async function updateExpertSelection(){
+  const allCouncil = personnel.filter(p=>p.type!=='core');
+  let needed = expertCount;
+  const sorted = [...allCouncil].sort((a,b)=>{
+    const aCustom = a.system_prompt && a.system_prompt.length > 100 ? 1 : 0;
+    const bCustom = b.system_prompt && b.system_prompt.length > 100 ? 1 : 0;
+    if(aCustom!==bCustom) return bCustom - aCustom;
+    return 0;
+  });
+  if(sorted.length < needed){
+    const problem = document.getElementById('problemInput').value.trim() || 'Vấn đề chung cần 10 chuyên gia';
+    const missing = needed - sorted.length;
+    document.getElementById('expertCountLabel').textContent = `Đang tạo thêm ${missing} chuyên gia...`;
+    try{
+      const r = await fetch(API_BASE+'/personnel/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({problem})});
+      if(r.ok){
+        await loadPersonnel();
+        const newAll = personnel.filter(p=>p.type!=='core');
+        const newSorted = [...newAll].sort((a,b)=>{
+          const aCustom = a.system_prompt && a.system_prompt.length > 100 ? 1 : 0;
+          const bCustom = b.system_prompt && b.system_prompt.length > 100 ? 1 : 0;
+          if(aCustom!==bCustom) return bCustom - aCustom;
+          return 0;
+        });
+        const selectedCouncil = newSorted.slice(0, needed);
+        selectedIds = new Set(['core_thuky','core_phoql','core_nhansu']);
+        selectedCouncil.forEach(p=>selectedIds.add(p.id));
+        renderPersonnel();
+        document.getElementById('expertCountLabel').textContent = `${needed} chuyên gia (tổng ${needed+3}) - ĐÃ CHỌN ${selectedIds.size}`;
+        if(newSorted.length < needed && needed <= 10){
+          setTimeout(()=>updateExpertSelection(), 800);
+        }
+        return;
+      }
+    }catch(e){ console.error(e); }
+  }
+  const selectedCouncil = sorted.slice(0, needed);
+  selectedIds = new Set(['core_thuky','core_phoql','core_nhansu']);
+  selectedCouncil.forEach(p=>selectedIds.add(p.id));
+  renderPersonnel();
+  document.getElementById('expertCountLabel').textContent = `${needed} chuyên gia (tổng ${needed+3} gồm 3 CORE) - ĐÃ CHỌN ${selectedIds.size}`;
+}
+</script>
+</body>
+</html>
