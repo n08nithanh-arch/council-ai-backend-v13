@@ -1,0 +1,6 @@
+venv/
+.venv/
+__pycache__/
+.idea/
+council-ai-v2-final/
+data/meetings/
