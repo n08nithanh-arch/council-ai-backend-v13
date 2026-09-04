@@ -1,1 +1,97 @@
-{"version":"V14.8"}
+{
+  "version": "V14.8 FINAL Flat - 2026-09-04 Complete",
+  "classic_5": [
+    {
+      "id": "analyst",
+      "name": "Analyst",
+      "role": "Phân tích logic",
+      "aspect": "Dữ liệu, logic, rủi ro",
+      "color": "#3B82F6",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "id": "creator",
+      "name": "Creator",
+      "role": "Sáng tạo",
+      "aspect": "Ý tưởng mới, khác biệt",
+      "color": "#8B5CF6",
+      "model": "claude-3-5-sonnet-20241022"
+    },
+    {
+      "id": "critic",
+      "name": "Critic",
+      "role": "Phản biện",
+      "aspect": "Tìm lỗ hổng",
+      "color": "#EF4444",
+      "model": "gpt-4o-mini"
+    },
+    {
+      "id": "empath",
+      "name": "Empath",
+      "role": "Con người & Đạo đức",
+      "aspect": "Người dùng, đạo đức",
+      "color": "#10B981",
+      "model": "claude-3-5-sonnet-20241022"
+    },
+    {
+      "id": "executor",
+      "name": "Executor",
+      "role": "Thực thi",
+      "aspect": "MVP, triển khai",
+      "color": "#F59E0B",
+      "model": "gpt-4o-mini"
+    }
+  ],
+  "expand_pool": [
+    {
+      "name": "Chuyên gia Kỹ thuật",
+      "aspect": "Kiến trúc, scalability",
+      "color": "#3B82F6"
+    },
+    {
+      "name": "Chuyên gia Thị trường",
+      "aspect": "PMF, đối thủ, xu hướng",
+      "color": "#8B5CF6"
+    },
+    {
+      "name": "Chuyên gia Tài chính",
+      "aspect": "Chi phí, ROI, pricing",
+      "color": "#10B981"
+    },
+    {
+      "name": "Chuyên gia Người dùng",
+      "aspect": "UX, JTBD, pain points",
+      "color": "#F59E0B"
+    },
+    {
+      "name": "Chuyên gia Đạo đức & Pháp lý",
+      "aspect": "Đạo đức, pháp lý, compliance",
+      "color": "#EF4444"
+    },
+    {
+      "name": "Chuyên gia Dữ liệu",
+      "aspect": "Metrics, đo lường",
+      "color": "#06B6D4"
+    },
+    {
+      "name": "Chuyên gia Vận hành",
+      "aspect": "SOP, triển khai",
+      "color": "#84CC16"
+    },
+    {
+      "name": "Chuyên gia Sáng tạo",
+      "aspect": "Ý tưởng đột phá",
+      "color": "#EC4899"
+    },
+    {
+      "name": "Chuyên gia Tăng trưởng",
+      "aspect": "Growth, marketing",
+      "color": "#6366F1"
+    },
+    {
+      "name": "Chuyên gia Bảo mật",
+      "aspect": "Bảo mật, privacy",
+      "color": "#14B8A6"
+    }
+  ]
+}
